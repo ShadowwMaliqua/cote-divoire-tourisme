@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Côte d'Ivoire, Sublime Terre d'Hospitalité — Prototype</title>
+<meta name="description" content="Prototype de l'application touristique de la marque-pays Côte d'Ivoire.">
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --orange:#F77F00; --orange-d:#C96400; --green:#009E60; --green-d:#00734A;
+  --ink:#1D1A17; --ink2:#5A524A; --line:#ECE6DF; --bg:#fff; --soft:#FBF7F2; --brown:#6B3A12;
+  --r:18px; --shadow:0 6px 24px rgba(40,25,10,.09);
+  --font:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.5;padding-bottom:84px;-webkit-tap-highlight-color:transparent}
+img{max-width:100%;display:block}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+h1,h2,h3{line-height:1.15;letter-spacing:-.01em}
+h2{font-size:1.55rem;margin-bottom:6px}
+h3{font-size:1.1rem}
+.sub{color:var(--ink2);margin-bottom:18px}
+.eyebrow{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green-d)}
+
+/* header */
+header.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top::after{content:"";display:block;height:3px;background:linear-gradient(90deg,var(--orange) 0 33%,#fff 33% 66%,var(--green) 66%)}
+.bar{display:flex;align-items:center;gap:12px;height:62px}
+.bar .logo{height:44px;width:auto;cursor:pointer}
+.bar .sp{flex:1}
+.ico{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:#fff}
+.ico:hover{background:var(--soft)}
+.ico svg{width:20px;height:20px}
+nav.desk{display:none;gap:4px}
+nav.desk button{padding:9px 14px;border-radius:99px;font-weight:600;color:var(--ink2)}
+nav.desk button.on{background:var(--orange);color:#fff}
+nav.desk button:not(.on):hover{background:var(--soft)}
+
+/* bottom nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 2px 8px;font-size:.7rem;font-weight:600;color:var(--ink2);min-height:58px}
+nav.tabs svg{width:23px;height:23px}
+nav.tabs button.on{color:var(--orange-d)}
+nav.tabs button.on::before{content:"";position:absolute;margin-top:-9px;width:28px;height:3px;border-radius:3px;background:var(--orange)}
+
+/* buttons / chips */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:99px;font-weight:700;min-height:46px;transition:transform .15s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--orange);color:#fff}.btn.pri:hover{background:var(--orange-d)}
+.btn.gre{background:var(--green);color:#fff}.btn.gre:hover{background:var(--green-d)}
+.btn.out{border:2px solid var(--line);background:#fff}.btn.out:hover{border-color:var(--green)}
+.btn.sm{padding:8px 14px;min-height:38px;font-size:.88rem}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:8px 16px;border-radius:99px;border:1.5px solid var(--line);font-weight:600;font-size:.9rem;background:#fff}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;background:#E8F6EF;color:var(--green-d)}
+.tag.o{background:#FFF0DC;color:var(--orange-d)}
+.tag.g{background:#F1EEEA;color:var(--ink2)}
+
+/* sections */
+.view{display:none}.view.on{display:block;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+section.s{padding:34px 0}
+.pagehead{padding:26px 0 6px}
+
+/* photo placeholders (à remplacer par de vraies photos) */
+.ph{position:relative;overflow:hidden;background:var(--g,linear-gradient(135deg,#F9A03F,#009E60));border-radius:var(--r);isolation:isolate}
+.ph::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.22;
+  background:repeating-linear-gradient(45deg,#fff 0 6px,transparent 6px 18px),repeating-linear-gradient(-45deg,#fff 0 3px,transparent 3px 18px)}
+.ph.im{background:var(--img) center/cover no-repeat,var(--g)}
+.ph.im::before{display:none}
+.ph::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 35%,rgba(20,10,0,.62))}
+.ph .cap{position:absolute;left:14px;right:14px;bottom:12px;color:#fff}
+.ph .cap b{display:block;font-size:1.05rem;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.ph .cap span{font-size:.82rem;opacity:.92}
+.ph .note{position:absolute;top:10px;left:10px;font-size:.62rem;background:rgba(255,255,255,.85);color:var(--ink2);padding:2px 8px;border-radius:99px;font-weight:700}
+.fav{position:absolute;top:8px;right:8px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;z-index:3}
+.fav svg{width:19px;height:19px;fill:none;stroke:var(--ink);stroke-width:2}
+.fav.on svg{fill:var(--orange);stroke:var(--orange)}
+.g1{--g:linear-gradient(135deg,#F7A33B,#0B9A63)}
+.g2{--g:linear-gradient(135deg,#0B9A63,#0b5e45)}
+.g3{--g:linear-gradient(135deg,#C96400,#F7B955)}
+.g4{--g:linear-gradient(135deg,#7A3E12,#F77F00)}
+.g5{--g:linear-gradient(135deg,#2c8fb5,#0B9A63)}
+.g6{--g:linear-gradient(135deg,#F77F00,#b8326a)}
+
+/* hero */
+.hero.im::after{background:linear-gradient(180deg,rgba(0,0,0,.05) 20%,rgba(20,10,0,.75))}
+.card video{width:100%;display:block;aspect-ratio:16/9;background:#000;object-fit:cover}
+.credits{font-size:.72rem;color:var(--ink2);margin-top:10px;line-height:1.6}
+.credits a{color:inherit}
+.hero{margin-top:14px;min-height:420px;display:flex;align-items:flex-end;border-radius:26px;--g:linear-gradient(160deg,#F9A03F 0%,#F77F00 38%,#009E60 100%)}
+.hero .in{padding:28px 22px;color:#fff;max-width:620px;position:relative;z-index:2}
+.hero h1{font-size:clamp(1.9rem,6vw,3.2rem);margin:8px 0 10px;text-shadow:0 2px 14px rgba(0,0,0,.25)}
+.hero p{font-size:1.05rem;margin-bottom:18px;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.hero .eyebrow{color:#fff;opacity:.95}
+.hero .sun{position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,#FFE29A,#FFE29A00 70%);z-index:1}
+
+.search{display:flex;gap:8px;background:#fff;border:2px solid var(--line);border-radius:99px;padding:6px 6px 6px 18px;align-items:center;box-shadow:var(--shadow);margin:-26px 14px 0;position:relative;z-index:5}
+.search input{flex:1;border:0;outline:0;font:inherit;min-width:0;padding:8px 0;background:none}
+.search:focus-within{border-color:var(--green)}
+.sugg{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;display:none;z-index:6}
+.sugg button{display:flex;width:100%;text-align:left;padding:12px 18px;gap:10px;align-items:center}
+.sugg button:hover{background:var(--soft)}
+.sugg small{color:var(--ink2);margin-left:auto}
+
+/* grids / cards */
+.grid{display:grid;gap:14px}
+.g-2{grid-template-columns:repeat(2,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 2px 10px rgba(40,25,10,.04);position:relative}
+.card .body{padding:14px 16px 16px}
+.card .body p{color:var(--ink2);font-size:.92rem;margin-top:4px}
+.card.click{cursor:pointer;transition:transform .2s,box-shadow .2s}
+.card.click:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.card .ph{border-radius:0;aspect-ratio:16/10}
+.scroller{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 14px;margin:0 -16px;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.scroller>*{flex:none;width:min(78vw,300px);scroll-snap-align:start}
+
+.pagne{height:10px;background:repeating-linear-gradient(135deg,var(--orange) 0 8px,#fff 8px 12px,var(--green) 12px 20px,#fff 20px 24px);border-radius:99px;margin:6px 0 0;opacity:.9}
+.band{background:var(--soft);border-radius:26px;padding:26px 20px}
+.proto{font-size:.78rem;background:#FFF7E6;border:1px dashed #E9B65A;color:#7a5200;padding:8px 12px;border-radius:12px;margin:12px 0}
+
+/* map */
+#map{height:56vh;min-height:360px;border-radius:var(--r);border:1px solid var(--line);z-index:1}
+.maplist{display:grid;gap:10px;margin-top:14px}
+.place{display:flex;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;cursor:pointer;align-items:center;background:#fff}
+.place:hover{border-color:var(--green)}
+.place .dot{width:44px;height:44px;border-radius:12px;flex:none;background:var(--c,var(--green));display:grid;place-items:center;color:#fff;font-weight:800}
+.place .mid{flex:1;min-width:0}
+.place small{color:var(--ink2)}
+.maptools{display:grid;gap:8px;margin-bottom:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+select{font:inherit;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff}
+
+/* circuits */
+.formats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+.fmt{border:2px solid var(--line);border-radius:16px;padding:14px;text-align:left;background:#fff}
+.fmt b{display:block}.fmt span{font-size:.85rem;color:var(--ink2)}
+.fmt.on{border-color:var(--orange);background:#FFF7EE}
+.steps{list-style:none;counter-reset:s;margin:10px 0}
+.steps li{counter-increment:s;display:flex;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.85rem}
+dl.kv{display:grid;gap:10px;margin-top:10px}
+dl.kv div{background:var(--soft);border-radius:12px;padding:10px 14px}
+dl.kv dt{font-size:.72rem;font-weight:700;color:var(--green-d);text-transform:uppercase;letter-spacing:.08em}
+.planner{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:16px}
+.planner label{font-size:.8rem;font-weight:700;color:var(--ink2);display:grid;gap:4px}
+.planner input,.planner select{width:100%}
+input[type=number],input[type=text],input[type=search]{font:inherit;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line)}
+
+/* agenda */
+.event{display:flex;gap:14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;align-items:flex-start}
+.event .date{flex:none;width:62px;text-align:center;border-radius:14px;background:var(--soft);padding:8px 4px;border:1px solid var(--line)}
+.event .date b{display:block;font-size:1.3rem;color:var(--orange-d)}
+.event .date span{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--ink2)}
+.event p{font-size:.9rem;color:var(--ink2)}
+
+/* passport */
+.passport{background:linear-gradient(160deg,#0b6d49,#009E60);color:#fff;border-radius:26px;padding:22px 18px;position:relative;overflow:hidden}
+.passport::after{content:"";position:absolute;right:-40px;bottom:-40px;width:200px;height:200px;border-radius:50%;border:26px solid rgba(255,255,255,.07)}
+.stamps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stamp{aspect-ratio:1;border-radius:50%;border:3px dashed rgba(255,255,255,.55);display:grid;place-items:center;text-align:center;font-size:.72rem;font-weight:700;padding:6px;transition:.4s}
+.stamp.got{border:3px solid #fff;background:var(--orange);transform:rotate(-8deg);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.bar-p{height:10px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:12px}
+.bar-p i{display:block;height:100%;background:var(--orange);border-radius:99px;transition:width .5s}
+.quest{border:1px solid var(--line);border-radius:18px;padding:18px;background:#fff;margin-top:14px}
+.clue{padding:12px 14px;border-left:4px solid var(--orange);background:#FFF7EE;border-radius:0 12px 12px 0;margin:10px 0}
+.locked{opacity:.45}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.badge{width:76px;text-align:center;font-size:.7rem;font-weight:700}
+.badge i{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 4px;border-radius:50%;background:#EEE;color:#aaa;font-style:normal;font-size:1.5rem}
+.badge.got i{background:linear-gradient(135deg,var(--orange),#FFC15A);color:#fff}
+
+/* profile */
+.tile{display:flex;gap:14px;align-items:center;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff;text-align:left;width:100%}
+.tile .ico{flex:none;background:var(--soft)}
+
+/* dialog */
+dialog{border:0;border-radius:24px;max-width:640px;width:calc(100% - 24px);padding:0;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh}
+dialog::backdrop{background:rgba(20,10,0,.5)}
+dialog .dh{position:sticky;top:0;background:#fff;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+dialog .db{padding:16px 18px 24px}
+dialog .ph{aspect-ratio:16/9;margin-bottom:14px}
+
+footer{margin-top:40px;border-top:3px solid var(--orange);background:#fff;padding:34px 0 20px}
+footer .cols{display:grid;gap:22px}
+footer h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--green-d);margin-bottom:8px}
+footer li{list-style:none;margin:5px 0;font-size:.92rem;color:var(--ink2)}
+footer li button:hover{color:var(--orange-d);text-decoration:underline}
+footer .logo{height:52px;margin-bottom:8px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:.3s;z-index:200;font-size:.92rem;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.fab{position:fixed;right:14px;bottom:76px;z-index:55;width:50px;height:50px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;box-shadow:var(--shadow)}
+.fab svg{width:22px;height:22px}
+.lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--ink2);margin:8px 0}
+.lgd i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+@media(min-width:760px){
+  body{padding-bottom:0}
+  nav.tabs{display:none}
+  nav.desk{display:flex}
+  .fab{bottom:20px}
+  .toast{bottom:24px}
+  .hero{min-height:520px}
+  .hero .in{padding:48px}
+  .search{max-width:640px;margin:-28px auto 0}
+  .scroller{display:grid;grid-template-columns:repeat(3,1fr);overflow:visible;margin:0;padding:0}
+  .scroller>*{width:auto}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-2{grid-template-columns:repeat(2,1fr)}
+  .formats{grid-template-columns:repeat(4,1fr)}
+  .planner{grid-template-columns:repeat(4,1fr)}
+  .maplay{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+  .maplay .maplist{margin-top:0;max-height:62vh;overflow:auto}
+  #map{height:62vh}
+  footer .cols{grid-template-columns:1.4fr 1fr 1fr 1fr}
+  .stamps{grid-template-columns:repeat(6,1fr)}
+  .prof{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hosp{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{header.top,nav.tabs,.fab{display:none}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap bar">
+    <img class="logo" src="logo.png" alt="Côte d'Ivoire — Sublime Terre d'Hospitalité" onclick="go('home')">
+    <nav class="desk" id="deskNav" aria-label="Navigation principale"></nav>
+    <span class="sp"></span>
+    <button class="ico" aria-label="Rechercher" onclick="focusSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+    <button class="ico" aria-label="Mon profil" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button>
+  </div>
+</header>
+
+<main>
+<!-- ============ ACCUEIL ============ -->
+<div class="view on" id="v-home"><div class="wrap">
+  <div class="ph hero im g1" style="--img:url(img/hero.jpg)" role="img" aria-label="Basilique Notre-Dame de la Paix de Yamoussoukro">
+    
+    <div class="in">
+      <div class="eyebrow">Le guide de la destination ivoirienne</div>
+      <h1>Et si vous découvriez la Côte d'Ivoire autrement ?</h1>
+      <p>Des paysages insoupçonnés, des cultures vivantes et des rencontres inoubliables vous attendent.</p>
+      <button class="btn pri" onclick="go('explore')">Je pars à la découverte →</button>
+    </div>
+  </div>
+
+  <div style="position:relative">
+    <form class="search" role="search" onsubmit="event.preventDefault();doSearch()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A524A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Que souhaitez-vous découvrir ?" autocomplete="off" aria-label="Recherche rapide">
+      <button class="btn pri sm" type="submit">Chercher</button>
+    </form>
+    <div class="sugg" id="sugg" style="margin:0 14px"></div>
+  </div>
+
+  <section class="s">
+    <div class="eyebrow">Sans compte, sans engagement</div>
+    <h2>L'inspiration du moment</h2>
+    <p class="sub">Des destinations mises en avant, renouvelées périodiquement.</p>
+    <div class="scroller" id="inspi"></div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="eyebrow">En images</div>
+    <h2>L'ambiance en mouvement</h2>
+    <p class="sub">Deux extraits pour sentir le littoral et la ville.</p>
+    <div class="grid g-2">
+      <figure class="card"><video controls muted playsinline preload="none" poster="vid/bassam.jpg" aria-label="Vague sur la plage de Grand-Bassam"><source src="vid/bassam.mp4" type="video/mp4"></video><figcaption class="body"><b>Plage de Grand-Bassam</b><p>Le littoral, face à l'océan.</p></figcaption></figure>
+      <figure class="card"><video controls muted playsinline preload="none" poster="vid/lagune.jpg" aria-label="Vue aérienne d'un échangeur à Abidjan"><source src="vid/lagune.mp4" type="video/mp4"></video><figcaption class="body"><b>Abidjan vue du ciel</b><p>Une métropole en mouvement.</p></figcaption></figure>
+    </div>
+    <p class="credits" id="vidCred"></p>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="band">
+      <div class="eyebrow">À proximité</div>
+      <h2>Autour de vous</h2>
+      <p class="sub">Autorisez la localisation pour voir les lieux les plus proches. Votre position n'est jamais enregistrée.</p>
+      <button class="btn gre" onclick="nearMe('home')">Activer « Autour de moi »</button>
+      <div class="maplist" id="nearHome"></div>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <h2>Circuits recommandés</h2>
+    <p class="sub">Escapades prêtes à organiser, avec durée et budget indicatif.</p>
+    <div class="grid g-3 scroller" id="homeCircuits"></div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <h2>À l'agenda</h2>
+    <p class="sub">Des événements qui donnent envie de partir.</p>
+    <div class="grid" id="homeAgenda"></div>
+    <p style="margin-top:12px"><button class="btn out sm" onclick="go('explore');tab('agenda')">Voir tout l'agenda</button></p>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="passport">
+      <div class="eyebrow" style="color:#FFD79A">Invitation à jouer</div>
+      <h2 style="margin:6px 0">Devenez l'explorateur de la Côte d'Ivoire</h2>
+      <p style="opacity:.92;margin-bottom:16px">Jeux de piste, tampons numériques et badges : chaque région a une histoire. À vous de la découvrir.</p>
+      <button class="btn pri" onclick="go('passport')">Ouvrir mon passeport</button>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <h2>Vivre l'hospitalité ivoirienne</h2>
+    <p class="sub">La culture, l'art de vivre et les rencontres humaines.</p>
+    <div class="hosp grid" id="homeHosp"></div>
+  </section>
+</div></div>
+
+<!-- ============ EXPLORER ============ -->
+<div class="view" id="v-explore"><div class="wrap">
+  <div class="pagehead">
+    <div class="eyebrow">Explorer</div>
+    <h2>Explorer la Côte d'Ivoire</h2>
+    <p class="sub">La diversité du pays, au-delà des destinations les plus connues.</p>
+    <div class="chips" id="exTabs" role="tablist">
+      <button class="chip on" data-t="exp">Par expérience</button>
+      <button class="chip" data-t="map">Ma carte interactive</button>
+      <button class="chip" data-t="agenda">Agenda ivoirien</button>
+      <button class="chip" data-t="hosp">Vivre l'hospitalité</button>
+      <button class="chip" data-t="prep">Préparer mon voyage</button>
+    </div>
+  </div>
+
+  <!-- par expérience -->
+  <div class="sx on" id="x-exp">
+    <div class="grid g-2 g-3" id="expGrid"></div>
+    <h3 style="margin:26px 0 10px" id="expTitle">Tous les lieux</h3>
+    <div class="grid g-2 g-3" id="placeGrid"></div>
+  </div>
+
+  <!-- carte -->
+  <div class="sx" id="x-map" style="display:none">
+    <h3 style="margin-bottom:10px">Où souhaitez-vous aller ?</h3>
+    <div class="maptools">
+      <input type="search" id="mapq" placeholder="Rechercher un lieu, une ville, une région…" aria-label="Recherche carte">
+      <div class="chips" id="mapCats">
+        <button class="chip on" data-c="all">Tout</button>
+        <button class="chip" data-c="Nature">Nature</button>
+        <button class="chip" data-c="Culture">Culture</button>
+        <button class="chip" data-c="Plage">Plages</button>
+        <button class="chip" data-c="Ville">Villes</button>
+      </div>
+      <div class="filters">
+        <select id="mapBudget" aria-label="Budget indicatif"><option value="">Budget : tous</option><option value="1">€ économique</option><option value="2">€€ intermédiaire</option><option value="3">€€€ confort</option></select>
+        <select id="mapAcc" aria-label="Accessibilité"><option value="">Accessibilité : toutes</option><option value="1">Accès facilité (à confirmer)</option></select>
+        <button class="btn gre sm" onclick="nearMe('map')">Autour de moi</button>
+      </div>
+    </div>
+    <div class="lgd"><span><i style="background:#009E60"></i>Nature</span><span><i style="background:#F77F00"></i>Culture</span><span><i style="background:#2c8fb5"></i>Plage</span><span><i style="background:#6B3A12"></i>Ville</span></div>
+    <div class="maplay">
+      <div id="map" role="application" aria-label="Carte interactive de la Côte d'Ivoire"></div>
+      <div class="maplist" id="mapList"></div>
+    </div>
+    <div class="proto">Carte réelle (OpenStreetMap, connexion requise). Les coordonnées sont approximatives et à valider avant publication ; distances et itinéraires seront calculés par un service cartographique. Mode connexion lente : les lieux consultés sont mémorisés sur l'appareil.</div>
+  </div>
+
+  <!-- agenda -->
+  <div class="sx" id="x-agenda" style="display:none">
+    <h3>La Côte d'Ivoire en mouvement</h3>
+    <p class="sub">Filtrer par catégorie et par région — pas seulement Abidjan.</p>
+    <div class="filters">
+      <select id="evCat" aria-label="Catégorie"><option value="">Toutes catégories</option><option>Arts et spectacles</option><option>Musique</option><option>Traditions</option><option>Gastronomie</option></select>
+      <select id="evReg" aria-label="Région"><option value="">Toutes régions</option></select>
+    </div>
+    <div class="grid" id="evList"></div>
+    <div class="proto">Événements d'illustration : les noms, dates, lieux et billetteries sont à confirmer auprès des organisateurs officiels. Un événement annulé ou passé sera clairement signalé.</div>
+  </div>
+
+  <!-- hospitalité -->
+  <div class="sx" id="x-hosp" style="display:none">
+    <h3>Vivre l'hospitalité ivoirienne</h3>
+    <p class="sub">Raconter le pays à travers ses habitants.</p>
+    <div class="grid g-2 g-3" id="hospGrid"></div>
+    <div class="band" style="margin-top:22px">
+      <div class="eyebrow">Voix du terroir</div>
+      <h3 style="margin:4px 0 6px">Portraits filmés de guides, artisans, habitants</h3>
+      <p class="sub" style="margin-bottom:0">Chaque histoire : titre, photo ou vidéo de couverture, récit court, témoignage, lieu évoqué, contenu audio/vidéo, et un bouton « Découvrir cette histoire sur la carte ».</p>
+      <p style="margin-top:12px"><button class="btn out sm" onclick="tab('map')">Découvrir sur la carte</button></p>
+    </div>
+  </div>
+
+  <!-- préparer -->
+  <div class="sx" id="x-prep" style="display:none">
+    <h3>Préparer mon voyage</h3>
+    <p class="sub">Des liens utiles plutôt que des promesses : la réservation intégrée n'est pas incluse dans ce prototype.</p>
+    <div class="grid g-2 g-3" id="prepGrid"></div>
+    <div class="proto">Les formalités, numéros officiels et conseils sanitaires doivent être vérifiés auprès des autorités ivoiriennes et de votre pays avant publication.</div>
+  </div>
+</div></div>
+
+<!-- ============ CIRCUITS ============ -->
+<div class="view" id="v-circuits"><div class="wrap">
+  <div class="pagehead">
+    <div class="eyebrow">Mes circuits et expériences</div>
+    <h2>Trouvez votre prochaine escapade</h2>
+    <p class="sub">Choisissez un format de voyage.</p>
+    <div class="formats" id="fmts"></div>
+    <div class="planner">
+      <label>Budget max / pers. (FCFA)<input type="number" id="pBud" placeholder="ex. 150000" min="0" step="5000"></label>
+      <label>Voyageurs<input type="number" id="pPax" value="2" min="1" max="30"></label>
+      <label>Durée dispo (jours)<input type="number" id="pDur" placeholder="ex. 2" min="1" max="14"></label>
+      <label>Centre d'intérêt<select id="pInt"><option value="">Tous</option><option>Culture</option><option>Nature</option><option>Plage</option><option>Gastronomie</option></select></label>
+    </div>
+  </div>
+  <div class="grid g-2 g-3" id="circList"></div>
+  <div class="proto">Programmes d'illustration. Les budgets sont indicatifs, ne sont pas des prix garantis et seront à valider avec les prestataires.</div>
+</div></div>
+
+<!-- ============ PASSEPORT ============ -->
+<div class="view" id="v-passport"><div class="wrap">
+  <div class="pagehead">
+    <div class="eyebrow">Mon passeport touristique</div>
+    <h2>Chaque région a une histoire. À vous de la découvrir.</h2>
+  </div>
+  <div class="passport">
+    <div class="eyebrow" style="color:#FFD79A">Carnet de voyage</div>
+    <h3 style="font-size:1.4rem;margin:4px 0">Voyageur : <span id="pName">Explorateur de Côte d'Ivoire</span></h3>
+    <div style="display:flex;justify-content:space-between;font-size:.9rem;margin-top:10px"><span><b id="pCount">0</b> / 6 tampons</span><span><b id="pRegs">0</b> région(s) explorée(s)</span></div>
+    <div class="bar-p"><i id="pBar" style="width:0"></i></div>
+    <div class="stamps" id="stamps"></div>
+  </div>
+
+  <section class="s" style="padding-bottom:0">
+    <h3>Votre prochaine mission</h3>
+    <p class="sub">Partez à la recherche d'un lieu emblématique, résolvez une énigme et gagnez un nouveau tampon.</p>
+    <div class="quest" id="quest"></div>
+    <div class="proto">En production, chaque étape serait validée par géolocalisation, QR code sur site partenaire ou validation par un prestataire. Ici, un bouton de simulation permet de tester le parcours.</div>
+  </section>
+
+  <section class="s" style="padding-bottom:0">
+    <h3>Badges</h3>
+    <div class="badges" id="badges"></div>
+  </section>
+
+  <section class="s" style="padding-bottom:0">
+    <h3>Récompenses &amp; défis nationaux</h3>
+    <div class="grid g-2" style="margin-top:10px">
+      <div class="card"><div class="body"><span class="tag o">Exemple fictif</span><h3 style="margin-top:6px">Bon de réduction partenaire</h3><p>Disponible dès 3 tampons — soumis à de vrais partenariats.</p></div></div>
+      <div class="card"><div class="body"><span class="tag o">Exemple fictif</span><h3 style="margin-top:6px">Défi « 3 régions, 3 traditions »</h3><p>Récompense la diversité des découvertes, pas le nombre de visites.</p></div></div>
+    </div>
+  </section>
+</div></div>
+
+<!-- ============ PROFIL ============ -->
+<div class="view" id="v-profile"><div class="wrap">
+  <div class="pagehead">
+    <div class="eyebrow">Mon espace voyageur</div>
+    <h2>Bienvenue dans votre carnet de découvertes.</h2>
+    <p class="sub">Aucun compte n'est nécessaire pour explorer ; il sert à sauvegarder votre progression.</p>
+  </div>
+  <div class="prof grid">
+    <button class="tile" onclick="openFavs()"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 6-8 11-8 11z"/></svg></span><span><b>Mes favoris</b><br><small style="color:var(--ink2)">Lieux, circuits et histoires enregistrés — <span id="favN">0</span></small></span></button>
+    <button class="tile" onclick="go('passport')"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="3"/></svg></span><span><b>Mon passeport</b><br><small style="color:var(--ink2)">Tampons, badges et défis en cours</small></span></button>
+    <button class="tile" onclick="go('circuits')"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4 0 3-6 8-6s4-8 8-8"/></svg></span><span><b>Mes voyages</b><br><small style="color:var(--ink2)">Circuits créés et itinéraires sauvegardés — <span id="saveN">0</span></small></span></button>
+    <button class="tile" onclick="toast('Paramètres : langue, notifications, confidentialité (maquette)')"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span><b>Mes paramètres</b><br><small style="color:var(--ink2)">Langue, notifications, confidentialité et compte</small></span></button>
+  </div>
+  <div class="band" style="margin-top:18px">
+    <h3>Préférences</h3>
+    <div class="planner" style="margin-top:10px;grid-template-columns:1fr 1fr">
+      <label>Langue<select><option>Français</option><option>English</option></select></label>
+      <label>Nom de voyageur<input type="text" id="nameIn" placeholder="Explorateur de Côte d'Ivoire"></label>
+    </div>
+    <button class="btn gre sm" onclick="saveName()">Enregistrer</button>
+    <p style="margin-top:14px"><button class="btn out sm" onclick="resetAll()">Réinitialiser mes données</button></p>
+  </div>
+  <div class="proto" style="margin-top:18px">
+    <b>Légende du prototype</b> — Fonctions essentielles : accueil, fiches, carte, favoris. Fonctions innovantes à développer : passeport, jeux de piste, circuits personnalisés. Services nécessitant des partenariats : récompenses, bons de réduction, billetterie, réservations.
+  </div>
+</div></div>
+</main>
+
+<footer>
+  <div class="wrap cols">
+    <div><img class="logo" src="logo.png" alt="Côte d'Ivoire"><p style="font-size:.9rem;color:var(--ink2)">Des terres à explorer. Des cultures à vivre. Une hospitalité à partager.</p></div>
+    <div><h4>Découvrir</h4><ul><li><button onclick="go('explore');tab('exp')">Destinations</button></li><li><button onclick="go('explore');tab('map')">Carte</button></li><li><button onclick="go('circuits')">Circuits</button></li><li><button onclick="go('explore');tab('agenda')">Agenda</button></li><li><button onclick="go('explore');tab('hosp')">Cultures</button></li></ul></div>
+    <div><h4>Informations pratiques</h4><ul><li><button onclick="go('explore');tab('prep')">Préparer son voyage</button></li><li>Assistance</li><li>Questions fréquentes</li><li><button onclick="toast('Signalement d\'une information erronée (maquette)')">Signaler une erreur</button></li></ul></div>
+    <div><h4>Nous suivre</h4><ul><li>Comptes officiels Côte d'Ivoire Tourisme</li><li>Contacts</li><li>Mentions légales</li><li>Confidentialité</li></ul></div>
+  </div>
+  <div class="wrap"><div class="pagne" style="margin-top:22px"></div><p style="text-align:center;font-size:.76rem;color:var(--ink2);margin-top:12px">Prototype de maquette — contenus, prix et dates d'illustration, à valider avant publication.</p><details class="credits"><summary>Crédits photos (Wikimedia Commons)</summary><div id="credList"></div></details></div>
+</footer>
+
+<button class="fab" aria-label="Recherche et assistance" onclick="focusSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/></svg></button>
+<nav class="tabs" id="tabNav" aria-label="Navigation principale"></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="dlg"><div class="dh"><b id="dTitle"></b><button class="ico" onclick="dlg.close()" aria-label="Fermer">✕</button></div><div class="db" id="dBody"></div></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ============ DONNÉES (illustratives — à valider avant publication) ============ */
+const CAT_COL={Nature:'#009E60',Culture:'#F77F00',Plage:'#2c8fb5',Ville:'#6B3A12'};
+const PLACES=[
+ {id:'bassam',n:'Grand-Bassam',reg:'Sud-Comoé',cat:'Culture',lat:5.2111,lng:-3.7386,b:1,acc:1,g:'g3',d:"Ville historique classée au patrimoine mondial de l'UNESCO : architecture coloniale, artisanat et littoral.",t:'Patrimoine et littoral'},
+ {id:'assinie',n:'Assinie-Mafia',reg:'Sud-Comoé',cat:'Plage',lat:5.1333,lng:-3.2833,b:3,acc:0,g:'g5',d:"Lagune, plages et sorties en pirogue à l'est d'Abidjan.",t:'Plages et évasion'},
+ {id:'bereby',n:'Grand-Béréby',reg:'Bas-Sassandra',cat:'Plage',lat:4.65,lng:-6.9167,b:2,acc:0,g:'g2',d:"Plages sauvages et forêt qui descend jusqu'à la mer.",t:'Plages et évasion'},
+ {id:'sassandra',n:'Sassandra',reg:'Gbôklé',cat:'Plage',lat:4.95,lng:-6.08,b:1,acc:0,g:'g5',d:"Petite ville côtière, port de pêche et ambiance tranquille.",t:'Plages et évasion'},
+ {id:'basilique',n:'Basilique Notre-Dame de la Paix',reg:'Yamoussoukro',cat:'Culture',lat:6.81,lng:-5.29,b:1,acc:1,g:'g3',d:"Monument emblématique de la capitale politique.",t:'Patrimoine'},
+ {id:'abidjan',n:'Abidjan — Plateau & Cocody',reg:'Abidjan',cat:'Ville',lat:5.3364,lng:-4.0267,b:2,acc:1,g:'g6',d:"Architecture, loisirs, shopping, gastronomie et vie nocturne.",t:'Villes et art de vivre'},
+ {id:'man',n:'Man et la région des 18 Montagnes',reg:'Tonkpi',cat:'Nature',lat:7.4125,lng:-7.5539,b:2,acc:0,g:'g2',d:"Montagnes, cascades et ponts de lianes.",t:'Nature et aventure'},
+ {id:'tai',n:'Parc national de Taï',reg:'Cavally',cat:'Nature',lat:5.85,lng:-7.35,b:3,acc:0,g:'g2',d:"Grande forêt tropicale primaire, riche en biodiversité.",t:'Nature et aventure'},
+ {id:'comoe',n:'Parc national de la Comoé',reg:'Bounkani',cat:'Nature',lat:8.8,lng:-3.8,b:3,acc:0,g:'g4',d:"Savane et galeries forestières au nord-est.",t:'Nature et aventure'},
+ {id:'korhogo',n:'Korhogo',reg:'Poro',cat:'Culture',lat:9.458,lng:-5.629,b:1,acc:0,g:'g4',d:"Capitale du pays sénoufo : tissage, peinture sur tissu, danses et traditions.",t:'Cultures et traditions'},
+ {id:'bouake',n:'Bouaké',reg:'Gbêkê',cat:'Ville',lat:7.6906,lng:-5.0303,b:1,acc:1,g:'g6',d:"Carrefour du centre du pays, marchés et vie locale.",t:'Villes et art de vivre'},
+ {id:'adjame',n:"Marché d'Adjamé (Abidjan)",reg:'Abidjan',cat:'Ville',lat:5.3569,lng:-4.0236,b:1,acc:0,g:'g1',d:"Immense marché populaire : saveurs, tissus et artisanat.",t:'Saveurs ivoiriennes'}
+];
+const EXPS=[
+ {n:'Plages et évasion',img:'assinie',d:'Assinie, Grand-Bassam, Grand-Béréby…',g:'g5'},
+ {n:'Nature et aventure',img:'man',d:'Montagnes, cascades, forêts et parcs.',g:'g2'},
+ {n:'Cultures et traditions',img:'dance',d:'Danses, artisanat, patrimoine et rencontres.',g:'g4'},
+ {n:'Saveurs ivoiriennes',img:'attieke',d:'Spécialités, marchés et gastronomie.',g:'g1'},
+ {n:'Villes et art de vivre',img:'abidjan',d:'Architecture, loisirs, shopping et vie nocturne.',g:'g6'},
+ {n:'Rencontres et savoir-faire',img:'korhogo',d:'Artisans, producteurs et initiatives locales.',g:'g3'}
+];
+const CIRCS=[
+ {id:'c1',img:'bassam',n:'48 heures à Grand-Bassam',days:2,cat:'Culture',fmt:'Un week-end',bud:[60000,120000],g:'g3',start:'Abidjan',sum:"Patrimoine, artisanat et littoral en un week-end.",
+  steps:['Abidjan — départ le matin','Quartier France : patrimoine colonial','Déjeuner local','Promenade sur le littoral','Jour 2 : artisanat et rencontres','Retour à Abidjan'],
+  incl:'Activités selon disponibilités des prestataires.',trans:'Route depuis Abidjan (temps à confirmer).'},
+ {id:'c2',img:'adjame',n:'Une journée à Abidjan',days:1,cat:'Gastronomie',fmt:'Une journée',bud:[15000,40000],g:'g6',start:'Abidjan',sum:"Marchés, saveurs et art de vivre.",
+  steps:['Marché et petit-déjeuner local','Plateau : architecture','Déjeuner attiéké-poisson','Quartier artisans','Coucher de soleil en lagune'],
+  incl:'Repas non inclus.',trans:'Transports urbains (taxi / VTC).'},
+ {id:'c3',img:'man',n:'Cap sur les 18 Montagnes',days:3,cat:'Nature',fmt:'Un week-end',bud:[90000,200000],g:'g2',start:'Man',sum:"Cascades, forêts et villages de l'ouest.",
+  steps:['Arrivée à Man','Cascade et ponts de lianes','Villages et traditions','Panorama sur la ville','Retour'],
+  incl:'Guide local à référencer.',trans:'Route longue distance (à confirmer).'},
+ {id:'c4',img:'bereby',n:'Petit budget : littoral en bus',days:1,cat:'Plage',fmt:'Petit budget',bud:[8000,25000],g:'g5',start:'Abidjan',sum:"Une sortie plage économique près de chez vous.",
+  steps:['Départ en transport collectif','Plage et baignade','Déjeuner de poisson braisé','Retour en fin d\'après-midi'],
+  incl:'Repas non inclus.',trans:'Transports collectifs.'},
+ {id:'c5',img:'assinie',n:'Entre amis : Assinie',days:2,cat:'Plage',fmt:'En groupe',bud:[70000,150000],g:'g1',start:'Abidjan',sum:"Lagune, pirogue et plage pour un groupe.",
+  steps:['Départ groupé','Sortie en pirogue','Barbecue de poisson','Soirée sur la plage','Matinée libre','Retour'],
+  incl:'Tarifs de groupe à négocier.',trans:'Minibus privé possible.'},
+ {id:'c6',img:'korhogo',n:'Korhogo, terre sénoufo',days:3,cat:'Culture',fmt:'Un week-end',bud:[80000,170000],g:'g4',start:'Korhogo',sum:"Tissage, peinture sur tissu et danses.",
+  steps:['Arrivée à Korhogo','Atelier de peinture sur tissu','Village artisan','Danses traditionnelles','Marché local'],
+  incl:'Ateliers selon prestataires.',trans:'Liaison depuis Abidjan à vérifier.'}
+];
+const EVENTS=[
+ {n:'Festival des arts vivants',cat:'Arts et spectacles',reg:'Abidjan',m:'—',dd:'Dates officielles à confirmer',d:'Spectacles, rencontres artistiques et découvertes culturelles.'},
+ {n:'Concerts et festivals',cat:'Musique',reg:'Abidjan',m:'—',dd:'Programme à confirmer',d:'Programmation, accès, billetterie et solutions de transport.'},
+ {n:'Fête traditionnelle (exemple)',cat:'Traditions',reg:'Poro',m:'—',dd:'Calendrier à confirmer',d:'Danses, masques et rites présentés avec leur contexte.'},
+ {n:'Festival de la gastronomie (exemple)',cat:'Gastronomie',reg:'Sud-Comoé',m:'—',dd:'Dates à confirmer',d:'Plats emblématiques, marchés et portraits de cuisiniers.'},
+ {n:'Carnaval balnéaire (exemple)',cat:'Arts et spectacles',reg:'Sud-Comoé',m:'—',dd:'Dates à confirmer',d:'Défilés et animations sur le littoral.'}
+];
+const HOSP=[
+ {n:'Nos saveurs',img:'attieke',d:'Plats emblématiques, recettes, marchés, restaurants traditionnels et portraits de cuisiniers.',g:'g1'},
+ {n:'Nos savoir-faire',img:'korhogo',d:'Tissage, poterie, sculpture, créateurs, ateliers visitables et boutiques locales.',g:'g3'},
+ {n:'Nos cultures et traditions',img:'mask',d:'Danses, masques, fêtes, récits historiques, langues et patrimoines régionaux.',g:'g4'}
+];
+const PREP=[
+ ['Avant de partir','Conseils de préparation et formalités à vérifier selon votre situation.'],
+ ['Se déplacer','Moyens de transport, liaisons, trajets et contacts disponibles.'],
+ ['Où dormir','Hébergements référencés, localisation, gamme de prix et liens officiels.'],
+ ['Où manger','Restaurants, spécialités et informations pratiques.'],
+ ['Budget','Estimation des dépenses pour un circuit ou un séjour.'],
+ ['Sécurité et santé','Conseils vérifiés, numéros officiels et précautions adaptées.'],
+ ['Accessibilité','Accès aux sites pour les personnes à mobilité réduite.'],
+ ['Assistance','Services touristiques et signalement d\'une information erronée.']
+];
+const QUEST={
+ title:'Sur les traces des secrets de Grand-Bassam',
+ intro:"Au XIXᵉ siècle, une ville côtière devint capitale. Retrouvez ses secrets, indice après indice.",
+ steps:[
+  {t:'Étape 1 — Trouvez la ville sur la carte',c:"Ancienne capitale coloniale, classée à l'UNESCO, entre lagune et océan.",a:'Observation à réaliser sur place : repérez une façade à galeries.'},
+  {t:'Étape 2 — L\'énigme historique',c:"Quel matériau bordait les rues du quartier colonial : le bois ou la brique ? (à compléter avec les historiens locaux)",a:'Indice débloqué : cherchez le marché artisanal.'},
+  {t:'Étape 3 — Dernière étape',c:"Rendez-vous face à l'océan pour récupérer votre tampon.",a:'Parcours terminé !'}
+ ]
+};
+const STAMPS=[['Littoral','Sud-Comoé'],['Nature','Tonkpi'],['Patrimoine','Yamoussoukro'],['Saveurs','Abidjan'],['Savoir-faire','Poro'],['Traditions','Cavally']];
+const BADGES=[['🧭','Premier pas'],['🏛️','Gardien du patrimoine'],['🌿','Ami de la nature'],['🎭','Passeur de culture']];
+
+/* ============ OUTILS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const dlg=$('#dlg');
+const store={get(k,d){try{const v=localStorage.getItem('ci_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('ci_'+k,JSON.stringify(v))}catch(e){}}};
+let favs=store.get('favs',[]), saved=store.get('saved',[]), pass=store.get('pass',{stamps:[],step:0,name:''});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
+const HEART='<svg viewBox="0 0 24 24"><path d="M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 6-8 11-8 11z"/></svg>';
+const fav=id=>`<button class="fav ${favs.includes(id)?'on':''}" aria-label="Ajouter aux favoris" aria-pressed="${favs.includes(id)}" onclick="event.stopPropagation();toggleFav('${id}',this)">${HEART}</button>`;
+function toggleFav(id,el){const i=favs.indexOf(id);i<0?favs.push(id):favs.splice(i,1);store.set('favs',favs);
+  $$(`.fav[onclick*="'${id}'"]`).forEach(b=>{b.classList.toggle('on',i<0);b.setAttribute('aria-pressed',i<0)});
+  $('#favN').textContent=favs.length;toast(i<0?'Ajouté aux favoris':'Retiré des favoris')}
+const S=k=>k?` style="--img:url(img/${k}.jpg)"`:'';
+const CRED={"bassam": {"author": "Unknown photographer", "lic": "Public domain", "page": "https://commons.wikimedia.org/wiki/File:Grand_Bassam_-_Rue_de_France_(Collection_L._Meteyer,_a_Grand-Bassam).jpg"}, "assinie": {"author": "Dadrik", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Assinie_en_2025_04.jpg"}, "bereby": {"author": "GillesJer", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Plages_Grand_Bereby_Hotel_LA_FLOTTE.jpg"}, "sassandra": {"author": "Néhémienathan", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Pont_Weygand_de_Sassandra_2026_01_(cropped).jpg"}, "basilique": {"author": "Didierwiki", "lic": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Basilique_notre_Dame_de_la_Paix_de_Yamoussoukro_9.jpg"}, "hero": {"author": "Didierwiki", "lic": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Basilique_notre_Dame_de_la_Paix_de_Yamoussoukro_16.jpg"}, "man": {"author": "Yasield", "lic": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Les_chutes_d%27eau_de_la_Cascade_de_Man_dans_la_r%C3%A9gion_du_Tonkpi_03.jpg"}, "tai": {"author": "yakovlev.alexey from Moscow, Russia", "lic": "CC BY-SA 2.0", "page": "https://commons.wikimedia.org/wiki/File:Ta%C3%AF_National_Park_(24148248710).jpg"}, "comoe": {"author": "Abdoul-Azize BOUKARY", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Fleuve_Como%C3%A9_dans_le_Parc_National_de_la_Como%C3%A9.jpg"}, "korhogo": {"author": "Mickey Mystique", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Korhogo_cloth,_Senufo_people,_Ivory_Coast_01.jpg"}, "bouake": {"author": "Adélie Ranville", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Bouak%C3%A9_suburb_street_01.jpg"}, "adjame": {"author": "Georges Hermann Njiale Njiale", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Le_march%C3%A9_d%27adjam%C3%A9.jpg"}, "abidjan": {"author": "abdallahh", "lic": "CC BY 2.0", "page": "https://commons.wikimedia.org/wiki/File:Plateau_Abidjan_de_nuit.jpg"}, "attieke": {"author": "Kod B", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Atti%C3%A9k%C3%A9_en_C%C3%B4te_d%27Ivoire_01.jpg"}, "mask": {"author": "Mickey Mystique", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Gere_mask_and_Dan_mask,_Ivory_Coast_01.jpg"}, "dance": {"author": "Neverdie225", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Danse_traditionnelle_en_pays_Odienneka_C%C3%B4te_d%27Ivoire_1.jpg"}};
+const eur=n=>n.toLocaleString('fr-FR')+' FCFA';
+
+/* ============ NAVIGATION ============ */
+const NAV=[['home','Accueil','<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>'],
+ ['explore','Explorer','<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'],
+ ['circuits','Mes circuits','<path d="M4 19c4 0 3-6 8-6s4-8 8-8"/><circle cx="4" cy="19" r="1.5"/><circle cx="20" cy="5" r="1.5"/>'],
+ ['passport','Mon passeport','<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M9 17h6"/>'],
+ ['profile','Mon profil','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>']];
+$('#tabNav').innerHTML=NAV.map(([k,l,i])=>`<button data-v="${k}" onclick="go('${k}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${i}</svg>${l.replace('Mes ','').replace('Mon ','')}</button>`).join('');
+$('#deskNav').innerHTML=NAV.map(([k,l])=>`<button data-v="${k}" onclick="go('${k}')">${l}</button>`).join('');
+let mapInit=false;
+function go(v){
+  $$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  $$('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(v==='passport')renderPass();
+  if(v==='profile'){$('#favN').textContent=favs.length;$('#saveN').textContent=saved.length}
+  history.replaceState(null,'','#'+v);
+}
+function tab(t){
+  go('explore');
+  $$('#exTabs .chip').forEach(c=>c.classList.toggle('on',c.dataset.t===t));
+  $$('.sx').forEach(x=>x.style.display=x.id==='x-'+t?'block':'none');
+  if(t==='map')initMap();
+}
+$$('#exTabs .chip').forEach(c=>c.onclick=()=>tab(c.dataset.t));
+
+/* ============ CARTES / LIEUX ============ */
+const phCard=(p,click)=>`<article class="card click" onclick="${click}"><div class="ph im ${p.g}"${S(p.id)}>${fav(p.id)}<div class="cap"><b>${esc(p.n)}</b><span>${esc(p.reg)} · ${esc(p.t||p.cat)}</span></div></div><div class="body"><p style="margin:0">${esc(p.d)}</p></div></article>`;
+function renderHome(){
+  $('#inspi').innerHTML=['bassam','man','korhogo'].map(id=>PLACES.find(p=>p.id===id)).map(p=>phCard(p,`openPlace('${p.id}')`)).join('');
+  $('#homeCircuits').innerHTML=CIRCS.slice(0,3).map(circCard).join('');
+  $('#homeAgenda').innerHTML=EVENTS.slice(0,2).map(evCard).join('');
+  $('#homeHosp').innerHTML=HOSP.map(h=>`<article class="card click" onclick="tab('hosp')"><div class="ph im ${h.g}"${S(h.img)}><div class="cap"><b>${h.n}</b></div></div><div class="body"><p style="margin:0">${h.d}</p></div></article>`).join('');
+  $('#expGrid').innerHTML=EXPS.map(e=>`<article class="card click" data-e="${esc(e.n)}" onclick="filterExp('${esc(e.n)}')"><div class="ph im ${e.g}"${S(e.img)}><div class="cap"><b>${e.n}</b><span>${e.d}</span></div></div></article>`).join('');
+  $('#hospGrid').innerHTML=HOSP.map(h=>`<article class="card"><div class="ph im ${h.g}"${S(h.img)}><div class="cap"><b>${h.n}</b></div></div><div class="body"><p style="margin:0">${h.d}</p></div></article>`).join('');
+  $('#prepGrid').innerHTML=PREP.map(([t,d])=>`<article class="card"><div class="body"><span class="tag">À compléter</span><h3 style="margin-top:6px">${t}</h3><p>${d}</p></div></article>`).join('');
+  filterExp('');
+}
+function filterExp(n){
+  const list=n?PLACES.filter(p=>p.t===n):PLACES;
+  $('#expTitle').textContent=n?n:'Tous les lieux';
+  $$('#expGrid .card').forEach(c=>c.style.outline=c.dataset.e===n?'3px solid var(--orange)':'none');
+  $('#placeGrid').innerHTML=(list.length?list:PLACES).map(p=>phCard(p,`openPlace('${p.id}')`)).join('');
+  if(n&&!list.length)toast('Contenus à venir pour cette catégorie');
+}
+function openPlace(id){
+  const p=PLACES.find(x=>x.id===id);
+  const seen=store.get('seen',[]);if(!seen.includes(id)){seen.unshift(id);store.set('seen',seen.slice(0,30))}
+  $('#dTitle').textContent=p.n;
+  $('#dBody').innerHTML=`<div class="ph im ${p.g}"${S(p.id)}>${fav(p.id)}</div>
+  <div style="margin-bottom:8px"><span class="tag">${esc(p.reg)}</span> <span class="tag o">${esc(p.t)}</span></div>
+  <p>${esc(p.d)}</p>
+  <dl class="kv">
+   <div><dt>Localisation</dt>${esc(p.reg)} · ${p.lat.toFixed(3)}, ${p.lng.toFixed(3)} (coordonnées approximatives)</div>
+   <div><dt>Informations pratiques</dt>Horaires, durée conseillée et période favorable : à renseigner et valider.</div>
+   <div><dt>Budget</dt>Tarif d'entrée, transport et frais : à vérifier — date de vérification affichée à la publication.</div>
+   <div><dt>Histoire et anecdotes</dt>Faits historiques vérifiés et témoignages : à rédiger avec des sources.</div>
+   <div><dt>À faire sur place</dt>Activités, sites voisins et prestataires référencés : à compléter.</div>
+  </dl>
+  <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+   <button class="btn pri sm" onclick="dlg.close();tab('map');setTimeout(()=>flyTo('${p.id}'),400)">Voir sur la carte</button>
+   <a class="btn out sm" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?to=${p.lat}%2C${p.lng}">Itinéraire</a>
+   <button class="btn out sm" onclick="share('${esc(p.n)}')">Partager</button></p>`;
+  dlg.showModal();
+}
+async function share(t){const d={title:t+' — Côte d\'Ivoire',text:t+' : Sublime Terre d\'Hospitalité',url:location.href};
+  try{if(navigator.share){await navigator.share(d)}else{await navigator.clipboard.writeText(location.href);toast('Lien copié')}}catch(e){}}
+
+/* ============ RECHERCHE ============ */
+const SUG=[...PLACES.map(p=>({l:p.n,k:'Lieu',a:()=>openPlace(p.id)})),...EXPS.map(e=>({l:e.n,k:'Expérience',a:()=>{tab('exp');filterExp(e.n)}})),...CIRCS.map(c=>({l:c.n,k:'Circuit',a:()=>openCirc(c.id)}))];
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+$('#q').addEventListener('input',e=>{
+  const v=norm(e.target.value.trim()),box=$('#sugg');
+  if(!v){box.style.display='none';return}
+  const r=SUG.filter(s=>norm(s.l).includes(v)).slice(0,6);
+  box.innerHTML=r.length?r.map((s,i)=>`<button data-i="${i}">${esc(s.l)}<small>${s.k}</small></button>`).join(''):'<button disabled>Aucun résultat</button>';
+  box.style.display='block';
+  $$('#sugg button[data-i]').forEach(b=>b.onclick=()=>{box.style.display='none';r[b.dataset.i].a()});
+});
+document.addEventListener('click',e=>{if(!e.target.closest('#sugg,.search'))$('#sugg').style.display='none'});
+function doSearch(){const f=$('#sugg button[data-i]');f?f.click():toast('Aucun résultat pour cette recherche')}
+function focusSearch(){go('home');setTimeout(()=>$('#q').focus(),300)}
+
+/* ============ CARTE ============ */
+let map,markers={},mapFilter={c:'all',q:'',b:'',a:''},userPos=null;
+function initMap(){
+  if(!mapInit){
+    mapInit=true;
+    if(window.L){
+      map=L.map('map',{scrollWheelZoom:false}).setView([7.6,-5.5],6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+    }else{$('#map').innerHTML='<p style="padding:24px;color:var(--ink2)">Carte indisponible hors connexion. La liste ci-contre reste utilisable.</p>'}
+    $('#mapq').oninput=e=>{mapFilter.q=norm(e.target.value);drawMap()};
+    $$('#mapCats .chip').forEach(c=>c.onclick=()=>{$$('#mapCats .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');mapFilter.c=c.dataset.c;drawMap()});
+    $('#mapBudget').onchange=e=>{mapFilter.b=e.target.value;drawMap()};
+    $('#mapAcc').onchange=e=>{mapFilter.a=e.target.value;drawMap()};
+  }
+  drawMap();setTimeout(()=>map&&map.invalidateSize(),200);
+}
+const dist=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180,h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+function drawMap(){
+  const f=PLACES.filter(p=>(mapFilter.c==='all'||p.cat===mapFilter.c)&&(!mapFilter.q||norm(p.n+' '+p.reg).includes(mapFilter.q))&&(!mapFilter.b||p.b<=+mapFilter.b)&&(!mapFilter.a||p.acc));
+  if(userPos)f.sort((x,y)=>dist(userPos[0],userPos[1],x.lat,x.lng)-dist(userPos[0],userPos[1],y.lat,y.lng));
+  if(map){Object.values(markers).forEach(m=>map.removeLayer(m));markers={};
+    f.forEach(p=>{markers[p.id]=L.circleMarker([p.lat,p.lng],{radius:10,color:'#fff',weight:2,fillColor:CAT_COL[p.cat],fillOpacity:1}).addTo(map)
+      .bindPopup(`<b>${esc(p.n)}</b><br>${esc(p.reg)}<br><a href="#" onclick="openPlace('${p.id}');return false">Voir la fiche</a>`)});
+    if(userPos)L.circleMarker(userPos,{radius:8,color:'#fff',weight:3,fillColor:'#d00',fillOpacity:1}).addTo(map).bindPopup('Vous êtes ici');
+  }
+  $('#mapList').innerHTML=f.length?f.map(p=>`<div class="place" tabindex="0" onclick="flyTo('${p.id}')" onkeydown="if(event.key==='Enter')flyTo('${p.id}')"><div class="dot" style="--c:${CAT_COL[p.cat]}">${p.n[0]}</div><div class="mid"><b>${esc(p.n)}</b><br><small>${esc(p.reg)} · ${esc(p.cat)}${userPos?' · '+Math.round(dist(userPos[0],userPos[1],p.lat,p.lng))+' km (à vol d\'oiseau)':''}</small></div><button class="btn out sm" onclick="event.stopPropagation();openPlace('${p.id}')">Fiche</button></div>`).join(''):'<p class="sub">Aucun lieu ne correspond à ces filtres.</p>';
+}
+function flyTo(id){const p=PLACES.find(x=>x.id===id);if(map&&markers[id]){map.flyTo([p.lat,p.lng],9);markers[id].openPopup()}else openPlace(id)}
+function nearMe(where){
+  if(!navigator.geolocation)return toast('Géolocalisation non disponible');
+  toast('Recherche de votre position…');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userPos=[pos.coords.latitude,pos.coords.longitude];
+    const near=[...PLACES].sort((x,y)=>dist(userPos[0],userPos[1],x.lat,x.lng)-dist(userPos[0],userPos[1],y.lat,y.lng)).slice(0,3);
+    if(where==='home'){
+      $('#nearHome').innerHTML=near.map(p=>`<div class="place" onclick="openPlace('${p.id}')"><div class="dot" style="--c:${CAT_COL[p.cat]}">${p.n[0]}</div><div class="mid"><b>${esc(p.n)}</b><br><small>≈ ${Math.round(dist(userPos[0],userPos[1],p.lat,p.lng))} km · à vol d'oiseau</small></div></div>`).join('');
+    }else{drawMap();if(map)map.flyTo(userPos,7)}
+  },()=>toast('Localisation refusée : la carte reste utilisable sans.'),{timeout:8000});
+}
+
+/* ============ CIRCUITS ============ */
+let fmt='';
+const FMTS=[['','Tous','Tous les formats'],['Une journée','Une journée','Une sortie près de chez vous.'],['Un week-end','Un week-end','Une escapade de 2 à 3 jours.'],['Petit budget','Petit budget','Des expériences économiques.'],['En groupe','En groupe','Famille, amis ou association.']];
+$('#fmts').innerHTML=FMTS.slice(1).map(([k,t,d])=>`<button class="fmt" data-f="${k}"><b>${t}</b><span>${d}</span></button>`).join('');
+$$('.fmt').forEach(b=>b.onclick=()=>{fmt=fmt===b.dataset.f?'':b.dataset.f;$$('.fmt').forEach(x=>x.classList.toggle('on',x.dataset.f===fmt));renderCirc()});
+['pBud','pPax','pDur','pInt'].forEach(i=>$('#'+i).addEventListener('input',renderCirc));
+function circCard(c){return `<article class="card click" onclick="openCirc('${c.id}')"><div class="ph im ${c.g}"${S(c.img)}>${fav(c.id)}<div class="cap"><b>${c.n}</b><span>${c.days} jour${c.days>1?'s':''} · ${c.steps.length} étapes</span></div></div><div class="body"><p style="margin:0">${c.sum}</p><p style="margin-top:8px"><span class="tag">${eur(c.bud[0])} – ${eur(c.bud[1])} / pers.</span> <span class="tag g">indicatif</span></p></div></article>`}
+function renderCirc(){
+  const bud=+$('#pBud').value,dur=+$('#pDur').value,it=$('#pInt').value;
+  const l=CIRCS.filter(c=>(!fmt||c.fmt===fmt)&&(!bud||c.bud[0]<=bud)&&(!dur||c.days<=dur)&&(!it||c.cat===it));
+  $('#circList').innerHTML=l.length?l.map(circCard).join(''):'<p class="sub">Aucun circuit compatible. Essayez d\'élargir vos critères.</p>';
+}
+function openCirc(id){
+  const c=CIRCS.find(x=>x.id===id),pax=Math.max(1,+$('#pPax').value||1);
+  $('#dTitle').textContent=c.n;
+  $('#dBody').innerHTML=`<div class="ph im ${c.g}"${S(c.img)}>${fav(c.id)}</div>
+  <p><span class="tag">${c.days} jour${c.days>1?'s':''}</span> <span class="tag o">${c.cat}</span> <span class="tag g">Départ : ${c.start}</span></p>
+  <p style="margin-top:8px">${c.sum}</p>
+  <h3 style="margin-top:14px">Étapes</h3><ol class="steps">${c.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+  <dl class="kv">
+   <div><dt>Budget par personne</dt>${eur(c.bud[0])} – ${eur(c.bud[1])} (indicatif)</div>
+   <div><dt>Budget pour ${pax} voyageur${pax>1?'s':''}</dt>${eur(c.bud[0]*pax)} – ${eur(c.bud[1]*pax)}</div>
+   <div><dt>Transport</dt>${esc(c.trans)}</div>
+   <div><dt>Prestations</dt>${esc(c.incl)} Compris / non compris : à préciser avec les prestataires.</div>
+   <div><dt>Conseils & sécurité</dt>À valider avant publication. Réservation : liens prestataires à venir.</div>
+  </dl>
+  <p class="proto">Programme d'illustration — aucun prix garanti.</p>
+  <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri sm" onclick="saveCirc('${c.id}')">Enregistrer</button><button class="btn out sm" onclick="share('${esc(c.n)}')">Partager</button><button class="btn out sm" onclick="toast('Personnalisation du circuit (à développer)')">Modifier mon circuit</button></p>`;
+  dlg.showModal();
+}
+function saveCirc(id){if(!saved.includes(id)){saved.push(id);store.set('saved',saved)}toast('Circuit enregistré dans Mes voyages')}
+
+/* ============ AGENDA ============ */
+const evCard=e=>`<article class="event"><div class="date"><b>${e.m}</b><span>à venir</span></div><div style="flex:1"><span class="tag o">${e.cat}</span><h3 style="margin:4px 0">${e.n}</h3><small style="color:var(--ink2)">${e.reg} · ${e.dd}</small><p>${e.d}</p><p style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn out sm" onclick="toast('Ajout au calendrier dès que les dates sont confirmées')">Ajouter à mon calendrier</button><button class="btn out sm" onclick="share('${esc(e.n)}')">Partager</button></p></div></article>`;
+$('#evReg').innerHTML+=[...new Set(EVENTS.map(e=>e.reg))].map(r=>`<option>${r}</option>`).join('');
+function renderEv(){const c=$('#evCat').value,r=$('#evReg').value;const l=EVENTS.filter(e=>(!c||e.cat===c)&&(!r||e.reg===r));$('#evList').innerHTML=l.length?l.map(evCard).join(''):'<p class="sub">Aucun événement pour ces filtres.</p>'}
+$('#evCat').onchange=$('#evReg').onchange=renderEv;
+
+/* ============ PASSEPORT ============ */
+function renderPass(){
+  const n=pass.stamps.length;
+  $('#pName').textContent=pass.name||"Explorateur de Côte d'Ivoire";
+  $('#pCount').textContent=n;$('#pRegs').textContent=n;$('#pBar').style.width=(n/STAMPS.length*100)+'%';
+  $('#stamps').innerHTML=STAMPS.map(([t,r],i)=>`<div class="stamp ${pass.stamps.includes(i)?'got':''}" title="${r}">${pass.stamps.includes(i)?'✔ ':''}${t}<br>${pass.stamps.includes(i)?'':'<small>à découvrir</small>'}</div>`).join('');
+  $('#badges').innerHTML=BADGES.map(([e,l],i)=>`<div class="badge ${n>i?'got':''}"><i>${e}</i>${l}</div>`).join('');
+  const s=pass.step,q=QUEST;
+  if(s>=q.steps.length){
+    $('#quest').innerHTML=`<h3>${q.title}</h3><div class="clue"><b>Mission accomplie !</b> Tampon « Littoral » obtenu.</div><button class="btn out sm" onclick="restartQuest()">Rejouer la mission</button>`;
+  }else{
+    const st=q.steps[s];
+    $('#quest').innerHTML=`<span class="tag o">Jeu de piste</span><h3 style="margin-top:6px">${q.title}</h3><p class="sub" style="margin-bottom:8px">${q.intro}</p>
+    <h3 style="font-size:1rem">${st.t}</h3><div class="clue">${st.c}</div><p style="font-size:.9rem;color:var(--ink2)">${st.a}</p>
+    <p style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri sm" onclick="nextStep()">Simuler la validation sur place</button><button class="btn out sm" onclick="tab('map')">Voir sur la carte</button></p>
+    <p style="margin-top:8px;font-size:.8rem;color:var(--ink2)">Étape ${s+1} sur ${q.steps.length}</p>`;
+  }
+}
+function nextStep(){pass.step++;if(pass.step>=QUEST.steps.length&&!pass.stamps.includes(0)){pass.stamps.push(0);toast('Nouveau tampon obtenu !')}else toast('Indice débloqué');store.set('pass',pass);renderPass()}
+function restartQuest(){pass.step=0;store.set('pass',pass);renderPass()}
+function saveName(){pass.name=$('#nameIn').value.trim();store.set('pass',pass);toast('Profil enregistré')}
+function resetAll(){try{Object.keys(localStorage).filter(k=>k.startsWith('ci_')).forEach(k=>localStorage.removeItem(k))}catch(e){}favs=[];saved=[];pass={stamps:[],step:0,name:''};go('profile');toast('Données réinitialisées')}
+function openFavs(){
+  const items=[...PLACES,...CIRCS].filter(x=>favs.includes(x.id));
+  $('#dTitle').textContent='Mes favoris';
+  $('#dBody').innerHTML=items.length?`<div class="maplist">${items.map(x=>`<div class="place" onclick="dlg.close();${x.steps?`openCirc('${x.id}')`:`openPlace('${x.id}')`}"><div class="dot">${x.n[0]}</div><div class="mid"><b>${esc(x.n)}</b><br><small>${x.steps?'Circuit':esc(x.reg)}</small></div></div>`).join('')}</div>`:'<p class="sub">Aucun favori pour le moment. Touchez le cœur sur une fiche pour l\'enregistrer.</p>';
+  dlg.showModal();
+}
+
+$('#credList').innerHTML=Object.entries(CRED).map(([k,c])=>`<a href="${c.page}" target="_blank" rel="noopener">${k}</a> — ${esc(c.author||'auteur')} · ${esc(c.lic)}`).join('<br>');
+const VC={"bassam": {"author": "Kod B", "lic": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Plage_de_Grand-Bassam.mpg", "ext": "org&utm_campaign=imageinfo&utm_content=original"}, "lagune": {"author": "Bouba Kam's", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Le_Transport_Lagunaire_%C3%A0_Abidjan_(STL)_r%C3%A9alis%C3%A9_par_Bouba_Kams.webm", "ext": "org&utm_campaign=imageinfo&utm_content=original"}};
+$('#vidCred').innerHTML='Vidéos (Wikimedia Commons) : '+Object.entries(VC).map(([k,c])=>`<a href="${c.page}" target="_blank" rel="noopener">${k}</a> — ${esc(c.author||'auteur')} · ${esc(c.lic)}`).join(' ; ');
+/* ============ INIT ============ */
+renderHome();renderCirc();renderEv();
+const h=location.hash.slice(1);if(['explore','circuits','passport','profile'].includes(h))go(h);else go('home');
+</script>
+</body>
+</html>
